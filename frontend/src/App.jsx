@@ -8,13 +8,13 @@ import { AdminRoute, ClubAdminRoute, StudentRoute } from './components/Protected
 import MainLayout from './components/Layout/MainLayout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
-import StudentDashboard from './pages/Events/StudentDashboard';
+import StudentDashboard from './pages/events/StudentDashboard';
 import ClubDashboard from './pages/club/ClubDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import TestDashboard from './pages/admin/TestDashboard';
-import EventsList from './pages/Events/EventsList';
-import EventDetails from './pages/Events/EventDetails';
-import MyRegistrations from './pages/Events/MyRegistrations';
+import EventsList from './pages/events/EventsList';
+import EventDetails from './pages/events/EventDetails';
+import MyRegistrations from './pages/events/MyRegistrations';
 import { createAppTheme } from './theme';
 
 const DashboardRouter = () => {
