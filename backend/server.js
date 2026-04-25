@@ -47,9 +47,46 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'GEC Portal API running' });
+// Health check with database status
+app.get('/api/health', async (req, res) => {
+  try {
+    const pool = require('./db').getPool();
+    const isPg = require('./db').isPostgres();
+    
+    let dbStatus = 'unknown';
+    let dbType = isPg ? 'PostgreSQL' : 'MySQL';
+    
+    try {
+      if (isPg) {
+        const conn = await pool.connect();
+        await conn.query('SELECT NOW()');
+        conn.release();
+        dbStatus = 'connected';
+      } else {
+        const conn = await pool.getConnection();
+        await conn.ping();
+        conn.release();
+        dbStatus = 'connected';
+      }
+    } catch (dbError) {
+      dbStatus = 'disconnected: ' + dbError.message.substring(0, 50);
+    }
+    
+    res.json({ 
+      status: 'ok', 
+      message: 'GEC Portal API running',
+      database: {
+        type: dbType,
+        status: dbStatus
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'error',
+      message: 'API error',
+      error: error.message
+    });
+  }
 });
 
 // Serve frontend for all other routes
