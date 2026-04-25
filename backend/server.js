@@ -7,6 +7,10 @@ dotenv.config();
 
 const app = express();
 
+// Initialize database
+const runMigrations = require('./migrations');
+require('./db').initializeDatabase();
+
 // CORS configuration
 const corsOptions = {
   origin: process.env.CORS_ORIGIN || [
@@ -46,6 +50,14 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`GEC Portal API running on port ${PORT}`);
+  
+  // Run migrations on startup
+  try {
+    await runMigrations();
+  } catch (error) {
+    console.error('Failed to run migrations:', error);
+    // Don't exit - migrations might fail due to permissions but API can still work
+  }
 });
