@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/AuthContext';
 import { AdminRoute, ClubAdminRoute, StudentRoute } from './components/ProtectedRoute';
 import MainLayout from './components/Layout/MainLayout';
+import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import StudentDashboard from './pages/events/StudentDashboard';
@@ -55,6 +56,7 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
