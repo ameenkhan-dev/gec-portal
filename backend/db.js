@@ -1,11 +1,10 @@
 /**
- * Database Connection Pool with SQLite Fallback
- * Priority: PostgreSQL > MySQL (with valid config) > SQLite (for testing)
+ * Database Connection Pool
+ * Priority: PostgreSQL > MySQL (with valid config) > In-Memory Store
  */
 
 const mysql = require('mysql2/promise');
 const { Pool } = require('pg');
-let sqlite3, db;
 
 let pool;
 let dbType = 'unknown';
@@ -63,46 +62,21 @@ function initializeDatabase() {
       });
       dbType = 'MySQL';
     } else {
-      // Fall back to SQLite for development/testing
-      console.log('📦 Using SQLite (fallback for testing)');
-      try {
-        sqlite3 = require('better-sqlite3');
-        const dbPath = process.env.DB_PATH || './gec-portal.db';
-        db = new sqlite3(dbPath);
-        console.log(`   Database file: ${dbPath}`);
-        dbType = 'SQLite';
-      } catch (error) {
-        console.error('⚠️ SQLite not available, MySQL localhost will be used (will fail in production)');
-        pool = mysql.createPool({
-          host: process.env.DB_HOST || 'localhost',
-          port: process.env.DB_PORT || 3306,
-          user: process.env.DB_USER || 'root',
-          password: process.env.DB_PASSWORD || 'password',
-          database: process.env.DB_NAME || 'gec_event_portal',
-          waitForConnections: true,
-          connectionLimit: 10,
-        });
-        dbType = 'MySQL';
-      }
+      // Fall back to in-memory store (no external dependencies)
+      console.log('📦 Using In-Memory Store (fallback)');
+      dbType = 'Memory';
     }
   }
 
   console.log(`✓ Database pool initialized: ${dbType}`);
-  return { pool, db, type: dbType };
-}
-
-function getPool() {
-  if (!pool && !db) {
-    initializeDatabase();
-  }
   return pool;
 }
 
-function getDb() {
-  if (!db) {
+function getPool() {
+  if (!pool) {
     initializeDatabase();
   }
-  return db;
+  return pool;
 }
 
 function getDatabaseType() {
@@ -115,9 +89,8 @@ function getDatabaseType() {
 module.exports = {
   initializeDatabase,
   getPool,
-  getDb,
   getDatabaseType,
   isPostgres: () => process.env.DATABASE_URL || process.env.DB_TYPE === 'postgres',
-  isSQLite: () => dbType === 'SQLite',
+  isMemory: () => dbType === 'Memory',
   isMySQL: () => dbType === 'MySQL',
 };
