@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getPool, isPostgres } = require('../db');
+const { loginWithMemory, registerWithMemory, initializeMemoryUsers } = require('../memoryStore');
 
 const ALLOWED_DOMAIN = process.env.ALLOWED_EMAIL_DOMAIN || 'gec.ac.in';
 
@@ -12,117 +13,143 @@ const register = async (req, res) => {
       return res.status(400).json({ error: `Only ${ALLOWED_DOMAIN} emails allowed` });
     }
 
-    const pool = getPool();
-    const isPg = isPostgres();
-    
-    let conn;
-    if (isPg) {
-      conn = await pool.connect();
-    } else {
-      conn = await pool.getConnection();
-    }
-
     try {
-      // Check if user exists
-      let query = 'SELECT * FROM users WHERE email = ?';
-      let params = [email];
+      // Try database first
+      const pool = getPool();
+      const isPg = isPostgres();
       
+      let conn;
       if (isPg) {
-        query = 'SELECT * FROM users WHERE email = $1';
-        params = [email];
+        conn = await pool.connect();
+      } else {
+        conn = await pool.getConnection();
       }
-      
-      const result = isPg 
-        ? await conn.query(query, params)
-        : await conn.execute(query, params);
-      
-      const existing = isPg ? result.rows : result[0];
 
-      if (existing.length > 0) {
+      try {
+        // Check if user exists
+        let query = 'SELECT * FROM users WHERE email = ?';
+        let params = [email];
+        
+        if (isPg) {
+          query = 'SELECT * FROM users WHERE email = $1';
+        }
+        
+        const result = isPg 
+          ? await conn.query(query, params)
+          : await conn.execute(query, params);
+        
+        const existing = isPg ? result.rows : result[0];
+
+        if (existing.length > 0) {
+          conn.release();
+          return res.status(400).json({ error: 'User already exists' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        query = 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)';
+        params = [name, email, hashedPassword, role || 'student'];
+        
+        if (isPg) {
+          query = 'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)';
+        }
+        
+        isPg 
+          ? await conn.query(query, params)
+          : await conn.execute(query, params);
+        
         conn.release();
-        return res.status(400).json({ error: 'User already exists' });
+        res.json({ message: 'User registered successfully' });
+      } catch (error) {
+        conn.release();
+        throw error;
       }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-      
-      query = 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)';
-      params = [name, email, hashedPassword, role || 'student'];
-      
-      if (isPg) {
-        query = 'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)';
+    } catch (dbError) {
+      // Fall back to memory store if database fails
+      console.log('Database unavailable, using memory store for registration');
+      try {
+        await initializeMemoryUsers();
+        const result = await registerWithMemory(name, email, password, role);
+        res.json(result);
+      } catch (memError) {
+        throw memError;
       }
-      
-      isPg 
-        ? await conn.query(query, params)
-        : await conn.execute(query, params);
-      
-      conn.release();
-      res.json({ message: 'User registered successfully' });
-    } catch (error) {
-      conn.release();
-      throw error;
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Register error:', error.message);
+    res.status(500).json({ error: error.message || 'Registration failed' });
   }
 };
 
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const pool = getPool();
-    const isPg = isPostgres();
     
-    let conn;
-    if (isPg) {
-      conn = await pool.connect();
-    } else {
-      conn = await pool.getConnection();
-    }
-
     try {
-      let query = 'SELECT user_id, name, email, password, role FROM users WHERE email = ?';
-      let params = [email];
+      // Try database first
+      const pool = getPool();
+      const isPg = isPostgres();
       
+      let conn;
       if (isPg) {
-        query = 'SELECT user_id, name, email, password, role FROM users WHERE email = $1';
-      }
-      
-      const result = isPg
-        ? await conn.query(query, params)
-        : await conn.execute(query, params);
-      
-      const users = isPg ? result.rows : result[0];
-      conn.release();
-
-      if (users.length === 0) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+        conn = await pool.connect();
+      } else {
+        conn = await pool.getConnection();
       }
 
-      const user = users[0];
-      const validPassword = await bcrypt.compare(password, user.password);
+      try {
+        let query = 'SELECT user_id, name, email, password, role FROM users WHERE email = ?';
+        let params = [email];
+        
+        if (isPg) {
+          query = 'SELECT user_id, name, email, password, role FROM users WHERE email = $1';
+        }
+        
+        const result = isPg
+          ? await conn.query(query, params)
+          : await conn.execute(query, params);
+        
+        const users = isPg ? result.rows : result[0];
+        conn.release();
 
-      if (!validPassword) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+        if (users.length === 0) {
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const user = users[0];
+        const validPassword = await bcrypt.compare(password, user.password);
+
+        if (!validPassword) {
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign(
+          { user_id: user.user_id, email: user.email, role: user.role },
+          process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production',
+          { expiresIn: '7d' }
+        );
+
+        res.json({ 
+          token, 
+          user: { user_id: user.user_id, name: user.name, email: user.email, role: user.role } 
+        });
+      } catch (error) {
+        conn.release();
+        throw error;
       }
-
-      const token = jwt.sign(
-        { user_id: user.user_id, email: user.email, role: user.role },
-        process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production',
-        { expiresIn: '7d' }
-      );
-
-      res.json({ 
-        token, 
-        user: { user_id: user.user_id, name: user.name, email: user.email, role: user.role } 
-      });
-    } catch (error) {
-      conn.release();
-      console.error('Login query error:', error);
-      throw error;
+    } catch (dbError) {
+      // Fall back to memory store if database fails
+      console.log('Database unavailable, using memory store for login');
+      try {
+        await initializeMemoryUsers();
+        const result = await loginWithMemory(email, password);
+        res.json(result);
+      } catch (memError) {
+        return res.status(401).json({ error: memError.message });
+      }
     }
   } catch (error) {
-    console.error('Login error:', error.message, error.stack);
+    console.error('Login error:', error.message);
     res.status(500).json({ error: error.message || 'Login failed' });
   }
 };
