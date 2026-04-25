@@ -17,11 +17,13 @@ function initializeDatabase() {
     const connectionString = process.env.DATABASE_URL;
     
     if (connectionString) {
+      console.log('📦 Using PostgreSQL via DATABASE_URL');
       pool = new Pool({
         connectionString,
         ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
       });
     } else {
+      console.log('📦 Using PostgreSQL via individual env vars');
       pool = new Pool({
         host: process.env.DB_HOST || 'localhost',
         port: process.env.DB_PORT || 5432,
@@ -32,9 +34,13 @@ function initializeDatabase() {
       });
     }
 
-    console.log('Using PostgreSQL database');
+    // PostgreSQL error handling
+    pool.on('error', (error) => {
+      console.error('PostgreSQL pool error:', error);
+    });
   } else {
     // MySQL configuration
+    console.log('📦 Using MySQL');
     pool = mysql.createPool({
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT || 3306,
@@ -44,10 +50,9 @@ function initializeDatabase() {
       waitForConnections: true,
       connectionLimit: 10,
     });
-
-    console.log('Using MySQL database');
   }
 
+  console.log('✓ Database pool initialized');
   return pool;
 }
 

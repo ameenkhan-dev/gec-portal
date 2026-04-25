@@ -118,10 +118,12 @@ const login = async (req, res) => {
       });
     } catch (error) {
       conn.release();
+      console.error('Login query error:', error);
       throw error;
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Login error:', error.message, error.stack);
+    res.status(500).json({ error: error.message || 'Login failed' });
   }
 };
 
