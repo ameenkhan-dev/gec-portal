@@ -8,12 +8,13 @@ import { AdminRoute, ClubAdminRoute, StudentRoute } from './components/Protected
 import MainLayout from './components/Layout/MainLayout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
-import StudentDashboard from './pages/student/StudentDashboard';
+import StudentDashboard from './pages/Events/StudentDashboard';
 import ClubDashboard from './pages/club/ClubDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import TestDashboard from './pages/admin/TestDashboard';
-import Events from './pages/events/Events';
-import EventDetails from './pages/events/EventDetails';
+import EventsList from './pages/Events/EventsList';
+import EventDetails from './pages/Events/EventDetails';
+import MyRegistrations from './pages/Events/MyRegistrations';
 import { createAppTheme } from './theme';
 
 const DashboardRouter = () => {
@@ -91,22 +92,27 @@ function App() {
             <Route
               path="/events"
               element={
-                <StudentRoute>
-                  <LayoutRoute mode={mode} toggleTheme={toggleTheme}>
-                    <Events />
-                  </LayoutRoute>
-                </StudentRoute>
+                <LayoutRoute mode={mode} toggleTheme={toggleTheme}>
+                  <EventsList />
+                </LayoutRoute>
               }
             />
 
             <Route
               path="/events/:id"
               element={
-                <StudentRoute>
-                  <LayoutRoute mode={mode} toggleTheme={toggleTheme}>
-                    <EventDetails />
-                  </LayoutRoute>
-                </StudentRoute>
+                <LayoutRoute mode={mode} toggleTheme={toggleTheme}>
+                  <EventDetails />
+                </LayoutRoute>
+              }
+            />
+
+            <Route
+              path="/my-registrations"
+              element={
+                <LayoutRoute mode={mode} toggleTheme={toggleTheme}>
+                  <MyRegistrations />
+                </LayoutRoute>
               }
             />
 
