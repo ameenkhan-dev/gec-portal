@@ -2,6 +2,10 @@
   command = "cd frontend && npm install && npm run build"
   publish = "frontend/dist"
 
+[build.environment]
+  VITE_API_BASE_URL = "https://gec-portal-api.onrender.com/api"
+  VITE_ALLOWED_EMAIL_DOMAIN = "gec.ac.in"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
