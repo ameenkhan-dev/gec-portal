@@ -64,7 +64,7 @@ const Landing = () => {
         sx={{
           position: 'relative',
           py: { xs: 6, md: 12 },
-          color: 'white',
+          color: '#fff',
           backdropFilter: 'blur(5px)',
           '&::before': {
             content: '""',
@@ -99,11 +99,11 @@ const Landing = () => {
                 background: alpha(theme.palette.common.white, 0.2),
                 backdropFilter: 'blur(10px)',
                 border: `2px solid ${alpha(theme.palette.common.white, 0.3)}`,
-                color: 'white',
+                color: '#fff',
                 fontSize: '1rem',
                 padding: '24px 12px',
                 height: 'auto',
-                '& .MuiChip-icon': { color: 'white' },
+                '& .MuiChip-icon': { color: '#fff' },
               }}
             />
           </Box>
@@ -182,7 +182,7 @@ const Landing = () => {
                 px: 4,
                 fontSize: '1.1rem',
                 fontWeight: 'bold',
-                color: 'white',
+                color: '#fff',
                 borderColor: alpha('white', 0.5),
                 background: alpha('white', 0.1),
                 backdropFilter: 'blur(10px)',
