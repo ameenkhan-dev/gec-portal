@@ -19,6 +19,7 @@ const corsOptions = {
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'https://lovely-malabi-a9b5cc.netlify.app',
+      'https://gecep.netlify.app',
       'https://gec-portal-api.onrender.com'
     ];
 
