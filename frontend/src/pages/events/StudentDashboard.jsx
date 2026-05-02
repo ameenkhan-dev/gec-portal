@@ -96,7 +96,7 @@ const StudentDashboard = () => {
             p: 1.5,
             borderRadius: '12px',
             display: 'flex',
-            color: 'white'
+            color: '#fff'
           }}>
             <IconComponent sx={{ fontSize: 28 }} />
           </Box>
