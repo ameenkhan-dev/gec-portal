@@ -43,12 +43,7 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/events', require('./routes/events'));
-app.use('/api/dashboard', require('./routes/dashboard'));
-
-// Health check with database status
+// Health check with database status (must come BEFORE wildcard static files)
 app.get('/api/health', async (req, res) => {
   try {
     const pool = require('./db').getPool();
@@ -90,7 +85,12 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Serve frontend for all other routes
+// Routes (must come BEFORE wildcard route)
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/events', require('./routes/events'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+
+// Serve frontend for all other routes (must be LAST)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
