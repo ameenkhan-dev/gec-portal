@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   Box, 
   Container, 
@@ -28,10 +28,13 @@ const Landing = () => {
   const { user } = useAuth();
   const theme = useTheme();
 
-  if (user) {
-    navigate('/dashboard', { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (user) return null;
 
   return (
     <Box sx={{ minHeight: '100vh', overflow: 'hidden', position: 'relative' }}>
