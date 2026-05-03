@@ -34,8 +34,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 
 const EventDetails = () => {
-  const { eventId } = useParams();
-  const navigate = useNavigate();
+  const { id } = useParams();
+  const eventId = id;
   const { user } = useAuth();
   const theme = useTheme();
   const [event, setEvent] = useState(null);
